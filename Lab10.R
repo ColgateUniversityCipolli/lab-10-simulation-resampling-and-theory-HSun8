@@ -98,15 +98,43 @@ p.loop <- seq(0.01, p, by = 0.01)
 np.sim.data <- tibble(n = numeric(), 
                       p = numeric(), 
                       moe.np = numeric())
-for (i in n.loop){
-  for(j in p.loop){
-    new.sim <- rbinom(n=num.polls, size = i, prob = j)/i
+for (n in n.loop){
+  for(p in p.loop){
+    new.sim <- rbinom(n=num.polls, size = n, prob = p)/n
     new.middle95 <- quantile(x=new.sim, 0.975) - quantile(x=new.sim, 0.025)
     new.moe <- 0.5*new.middle95
-    np.sim.data <- bind_rows(np.sim.data, tibble(n=i, p=j, moe.np = new.moe))
+    np.sim.data <- bind_rows(np.sim.data, tibble(n=n, p=p, moe.np = new.moe))
   }
 }
 ggplot(data = np.sim.data, aes(n,p, fill = moe.np))+
   geom_raster()+
   scale_fill_gradient()+
+  theme_bw()
+
+################################################################################
+# Actual Margin of Error
+z <- rnorm(n=10000)
+
+(z.pinned1 <- quantile(x=z, 0.975) - quantile(x=z, 0.025))
+
+# actual code
+(z.pinned <- qnorm(0.975))
+
+n.wilson <- 2000
+n.loop.wilson <- seq(100, n.wilson, by = 10)
+
+np.sim.data.wilson <- tibble(n.wilson = numeric(), 
+                      p.wilson = numeric(), 
+                      moe.wilson = numeric())
+for (n in n.loop.wilson){
+  for(p in p.loop){
+    new.moe <- z.pinned * 
+      ((sqrt(n*p*(1-p) + (z.pinned^2)/4)) / (n+z.pinned^2))
+    np.sim.data.wilson <- bind_rows(np.sim.data.wilson, 
+                             tibble(n.wilson=n, p.wilson=p, 
+                                    moe.wilson = new.moe))
+  }
+}
+ggplot(data = np.sim.data.wilson)+
+  geom_raster(aes(x=n.wilson,y=p.wilson, fill = moe.wilson))+
   theme_bw()
