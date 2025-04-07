@@ -19,7 +19,10 @@ first.sim <- ggplot()+
   geom_histogram(aes(x=basic.sim, y = after_stat(density)))+
   geom_density(aes(x=basic.sim))+
   geom_hline(yintercept = 0)+
-  theme_bw()
+  geom_vline(xintercept=0.39, color = "red")+
+  xlab("p")+
+  theme_bw()+
+  ggtitle("Sampling Distribution for p, n = 1004")
 
 # histogram + density is approximately normal
 # basic.sim.data <- summarize(tibble(x=basic.sim), 
@@ -40,7 +43,10 @@ second.sim <- ggplot()+
   geom_histogram(aes(x=double.sim, y = after_stat(density)))+
   geom_density(aes(x=double.sim))+
   geom_hline(yintercept=0)+
-  theme_bw()
+  geom_vline(xintercept=0.39, color = "red")+
+  xlab("p")+
+  theme_bw()+
+  ggtitle("Sampling Distribution for p, n = 2008")
 
 d.middle.95 <- quantile(x=double.sim, 0.975) - quantile(x=double.sim, 0.025)
 d.moe <- 0.5*d.middle.95
@@ -49,7 +55,8 @@ d.moe <- 0.5*d.middle.95
 # histogram + density still normal, however, variance is smaller
 # moe and middle 95 also smaller for larger sample esize
 
-task1.sims <- first.sim + second.sim
+task1.sims <- first.sim / second.sim
+
 ################################################################################
 # Resampling
 
@@ -72,12 +79,15 @@ for (i in 1:resamples){
                           replace = T)
   # compute the stat on the resample
   resamples.data$p.hat[i] <- mean(curr.resample, na.rm = T)
-  
 }
 
 resampling.plot <- ggplot(data = resamples.data)+
   geom_histogram(aes(x = p.hat, y = after_stat(density)))+
-  geom_density(aes(x=p.hat))
+  geom_density(aes(x=p.hat))+
+  theme_bw()+
+  geom_vline(xintercept = 0.39, color = "red")+
+  geom_vline(xintercept = mean(resamples.data$p.hat), color = "green")+
+  ggtitle("Sampling Distribution via Resampling, n = 1004")
 
 resample.middle95 <- quantile(x=resamples.data$p.hat, 0.975) - 
                      quantile(x=resamples.data$p.hat, 0.025)
@@ -106,10 +116,14 @@ for (n in n.loop){
     np.sim.data <- bind_rows(np.sim.data, tibble(n=n, p=p, moe.np = new.moe))
   }
 }
-ggplot(data = np.sim.data, aes(n,p, fill = moe.np))+
-  geom_raster()+
-  scale_fill_gradient()+
-  theme_bw()
+
+sim.np.plot <- ggplot(data = np.sim.data) +
+  geom_raster(aes(x=p, y=n, fill=moe.np))+
+  scale_fill_distiller("Margin of Error", palette = "Accent") +
+  theme_bw() +
+  geom_vline(xintercept = 0.39)+
+  geom_hline(yintercept = 1004, color = "darkred") +
+  geom_hline(yintercept = 2008, color = "green")
 
 ################################################################################
 # Actual Margin of Error
@@ -120,7 +134,7 @@ z <- rnorm(n=10000)
 # actual code
 (z.pinned <- qnorm(0.975))
 
-n.wilson <- 2000
+n.wilson <- 3000
 n.loop.wilson <- seq(100, n.wilson, by = 10)
 
 np.sim.data.wilson <- tibble(n.wilson = numeric(), 
@@ -135,6 +149,14 @@ for (n in n.loop.wilson){
                                     moe.wilson = new.moe))
   }
 }
-ggplot(data = np.sim.data.wilson)+
-  geom_raster(aes(x=n.wilson,y=p.wilson, fill = moe.wilson))+
-  theme_bw()
+wilson.np.plot <- ggplot(data = np.sim.data.wilson)+
+  geom_raster(aes(x=p.wilson, y=n.wilson, fill = moe.wilson))+
+  scale_fill_viridis_c("Wilson Margin of Error", option = "H")+
+  theme_bw()+
+  ylab("n")+
+  geom_vline(xintercept = 0.39)+
+  geom_hline(yintercept = 1004, color = "darkred")+
+  geom_hline(yintercept = 2008, color = "green")
+
+raster.plots <- (sim.np.plot / wilson.np.plot)  
+
