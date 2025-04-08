@@ -21,6 +21,7 @@ first.sim <- ggplot()+
   geom_hline(yintercept = 0)+
   geom_vline(xintercept=0.39, color = "red")+
   xlab("p")+
+  xlim(0.325, 0.450)+
   theme_bw()+
   ggtitle("Sampling Distribution for p, n = 1004")
 
@@ -45,6 +46,7 @@ second.sim <- ggplot()+
   geom_hline(yintercept=0)+
   geom_vline(xintercept=0.39, color = "red")+
   xlab("p")+
+  xlim(0.325, 0.450)+
   theme_bw()+
   ggtitle("Sampling Distribution for p, n = 2008")
 
@@ -62,9 +64,10 @@ task1.sims <- first.sim / second.sim
 
 # create a tibble with gallup data: .39 satisfied, .59 unsatisified, .02 no answer
 # round to catch all samples
+sample.size <- 1004
 satisfied <- rep(1, times = round(0.39 * sample.size))
 unsatisfied <- rep(0, times = round(0.59 * sample.size))
-no.opinion <- rep(NA, times = round(0.02 * sample.size))
+no.opinion <- rep(0, times = round(0.02 * sample.size))
 
 
 # combine into tibble
@@ -85,8 +88,8 @@ resampling.plot <- ggplot(data = resamples.data)+
   geom_histogram(aes(x = p.hat, y = after_stat(density)))+
   geom_density(aes(x=p.hat))+
   theme_bw()+
-  geom_vline(xintercept = 0.39, color = "red")+
-  geom_vline(xintercept = mean(resamples.data$p.hat), color = "green")+
+  #geom_vline(xintercept = 0.39, color = "red")+
+  #geom_vline(xintercept = mean(resamples.data$p.hat), color = "green")+
   ggtitle("Sampling Distribution via Resampling, n = 1004")
 
 resample.middle95 <- quantile(x=resamples.data$p.hat, 0.975) - 
@@ -119,7 +122,7 @@ for (n in n.loop){
 
 sim.np.plot <- ggplot(data = np.sim.data) +
   geom_raster(aes(x=p, y=n, fill=moe.np))+
-  scale_fill_distiller("Margin of Error", palette = "Accent") +
+  scale_fill_distiller("Estimated Margin of Error", palette = "Accent") +
   theme_bw() +
   geom_vline(xintercept = 0.39)+
   geom_hline(yintercept = 1004, color = "darkred") +
@@ -151,7 +154,7 @@ for (n in n.loop.wilson){
 }
 wilson.np.plot <- ggplot(data = np.sim.data.wilson)+
   geom_raster(aes(x=p.wilson, y=n.wilson, fill = moe.wilson))+
-  scale_fill_viridis_c("Wilson Margin of Error", option = "H")+
+  scale_fill_distiller("Wilson Margin of Error", palette = "Accent")+
   theme_bw()+
   ylab("n")+
   geom_vline(xintercept = 0.39)+
